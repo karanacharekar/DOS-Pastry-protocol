@@ -1,23 +1,24 @@
 defmodule Pastrytest do
  
-
-  def main(args) do
+def main(args) do
 
     input_val = parse_args(args)
 
 
 
     list = getNodeList(input_val)
+    node_id = "0"
+    #IO.inspect list
 
-    IO.inspect list
+    IO.puts "file hash :: " <> getFileHash("keyur file")
 
     #IO.inspect getZeroes(25,"")
-
+    generate_routing_table(input_val,node_id,list)
   end
 
   def getBitCount do
 
-    bitCount = 5
+    bitCount = 4
 
     bitCount 
 
@@ -51,7 +52,7 @@ defmodule Pastrytest do
 
   def getNodeList(n) do
 
-    interval =  round(:math.floor(:math.pow(2,getBitCount)/n))
+    interval =  round(:math.floor(getNodeSpace/n))
 
     generateList(n,interval,0,[])
 
@@ -71,9 +72,15 @@ defmodule Pastrytest do
 
     IO.puts cur
 
-    nodeList = [curid | nodeList]
+
+
+    nodeList = [cur | nodeList]
+
+    
 
     if( n > 1 ) do
+
+      interval = round(:math.floor((getNodeSpace - curid - 1)/(n-1)))
 
       nodeList = generateList(n-1,interval,curid+interval,nodeList)
 
@@ -95,6 +102,14 @@ defmodule Pastrytest do
 
   end
 
+
+
+  def getNodeSpace do
+
+    :math.pow(2,getBitCount)
+
+  end
+
   
 
   def getZeroes(n,str) do
@@ -110,11 +125,22 @@ defmodule Pastrytest do
   end
 
 
-  def iter(route_table,rows,nodelist,nodeid) when rows > -1 do 
-    Map.put(route_table,rows,[])
+
+  def getFileHash(filename) do
+    String.slice(Base.encode16(:crypto.hash(:sha256, filename)),0,round(getBitCount/4))
+  end
+
+
+  def iter(route_table,rows,nodelist,nodeid)   do 
+    #IO.inspect rows
+    if(rows < 0) do 
+      route_table
+    else
+    route_table = Map.put(route_table,rows,[])
     choice = ["A","B","C","D","E","F","0","1","2","3","4","5","6","7","8","9"]
-    
-    if rows!=0 do
+    #IO.inspect route_table  
+    if rows != 0 do
+    IO.puts "helooooooooo"
     Enum.each nodelist, fn x ->
     choice = List.delete(choice,String.at(nodeid,rows))
     if String.slice(x,0..rows-1) == String.slice(nodeid,0..rows-1) do
@@ -122,7 +148,7 @@ defmodule Pastrytest do
       if Enum.member?(choice,char) do
         list = Map.get(route_table,rows)
         list = list ++ [x]
-        Map.put(route_table,rows,x)
+        route_table = Map.put(route_table,rows,x)
         choice = List.delete(choice,char)
       end
     end
@@ -130,27 +156,39 @@ defmodule Pastrytest do
     
 
     else
+    IO.inspect rows
+    IO.inspect route_table
+    IO.puts "karannnnnnn"
     Enum.each nodelist, fn x ->
     choice = List.delete(choice,String.at(x,rows))
+    #IO.inspect choice
     if String.first(x) != String.first(nodeid) do
+      IO.inspect choice
       char = String.first(x)
       if Enum.member?(choice,char) do
         list = Map.get(route_table,rows)
         list = list ++ [x]
-        Map.put(route_table,rows,list)
-        List.delete(choice,char)
+        route_table = Map.put(route_table,rows,list)
+        IO.inspect route_table
+        choice = List.delete(choice,char)
       end  
     end
     end
-    iter(route_table,rows-1,nodelist,nodeid) 
-
+    iter(route_table,rows-1,Enum.shuffle(nodelist),nodeid) 
     route_table
   end
+  end
+  end
+
+  
+
 
   def generate_routing_table(numnodes,nodeid,nodelist) do
-    rows = Float.ceil(:math.log(numnodes)/:math.log(16)) 
+    rows = round(Float.ceil(:math.log(numnodes)/:math.log(16))) 
     route_table = %{}
-    fin_route_table = iter(route_table,rows-1,nodelist,nodeid)    
+    fin_route_table = iter(route_table,rows-1,nodelist,nodeid)  
+    IO.puts "here"
+    IO.inspect fin_route_table
   end
 
 end

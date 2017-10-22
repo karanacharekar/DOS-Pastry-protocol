@@ -6,7 +6,7 @@ def main(args) do
   end
 
   def getBitCount do
-    bitCount = 16
+    bitCount = 12
     bitCount 
   end
 
@@ -24,10 +24,13 @@ def main(args) do
 
 
     IO.puts " all is done"
-    node_id = "567"
+    node_id = "549"
     IO.puts "file hash :: " <> getFileHash("keyur file")
+    fileHash = getFileHash("keyur file")
+    startNode = Enum.random(list)
+    send_message(startNode,fileHash,0)
     #generate_routing_table(input_val,node_id,list) 
-
+    IO.gets ""
 
 
   end
@@ -45,6 +48,7 @@ def main(args) do
     numnodes = elem(args,1)
     nodelist = elem(args,2)
     state = generate_routing_table(numnodes,nodeid,nodelist)
+    state = Map.put(state,"node_id",nodeid)
     IO.puts "-------------------------"
     IO.inspect nodeid
     IO.inspect state
@@ -323,7 +327,94 @@ def create_leaf_set(nodeid,nodelist,distance_list) do
     else
         distance_list
     end
-
 end
+
+
+
+
+
+def send_message(neighbourId,fileHash,prefixLength) do
+      neighbour_node_name = neighbourId
+      spawn fn -> GenServer.call(String.to_atom(neighbour_node_name),{:receive_msg,{fileHash,prefixLength}}) end
+  end
+
+  ##server cal;backs
+  #new_messag8e => filehash,prefixlength 
+  def handle_call({:receive_msg ,new_message}, _from,state) do
+    
+    fileHash = elem(new_message,0)
+    prefixLength = elem(new_message,1)
+    neighbour = findClosestNeighbor(fileHash,state,prefixLength)
+    IO.puts "*****"
+    IO.inspect neighbour
+    neighbourId = elem(neighbour,0)
+    IO.inspect neighbourId
+    if(elem(neighbour,1) == true) do
+     IO.puts "keyurrrrrr"
+      IO.puts neighbourId
+    else
+      send_message(neighbourId,fileHash,prefixLength+1)
+    end
+    {:reply, state, state}   
+  end
+
+def findClosestNeighbor(fileHash, state, prefixLength) do 
+
+     startNode = "000"
+     
+     currPrefix= ""
+     filePrefix = ""
+
+     if prefixLength > 0 do 
+      currPrefix= String.slice(startNode, 0..prefixLength-1)
+      filePrefix = String.slice(fileHash, 0..prefixLength-1)
+     end   
+
+     neighbors = Map.get(state, prefixLength)
+     nextHop = ''
+     isLastHop = false
+     if !Enum.member?(neighbors, fileHash) do
+        increasedPrefix =  String.slice(fileHash, 0..prefixLength)
+        #IO.inspect startNode
+        # IO.inspect increasedPrefix
+        # IO.inspect String.slice(Enum.at(neighbors,0), 0..prefixLength)
+        # IO.puts "-------------"
+        nextHoplist = Enum.filter(neighbors, fn(neighbor) ->  String.slice(neighbor, 0..prefixLength) == increasedPrefix end)
+        IO.inspect nextHoplist
+       
+        if length(nextHoplist) != 0 do
+          nextHop = Enum.random(nextHoplist)
+          #IO.puts "nextHop"
+          #IO.inspect nextHop
+          #IO.puts "--------------------"
+        else
+          nextHop = getNearestNodeId(neighbors, fileHash, prefixLength, 18, fileHash)
+          isLastHop = true
+        end
+     end
+     IO.inspect nextHop
+     {nextHop, isLastHop}
+  end
+
+
+
+
+def getNearestNodeId(list, fileHash, position, min, sofar) do
+    if(length(list) == 0) do
+      sofar    
+    else
+      [firstElement | list] = list   
+      dist =  String.to_integer(String.slice(fileHash,position..position),16) - String.to_integer(String.slice(firstElement,position..position),16)
+      #find nearest matching character less than
+      ##IO.puts "filehash : " <> String.slice(fileHash,position..position) <> "  FE::" <> String.slice(firstElement,position..position)  
+      #IO.puts dist 
+      if(dist >=0 && dist<min) do
+        sofar = firstElement
+        min = dist
+      end
+      getNearestNodeId(list,fileHash,position,min,sofar)
+    end
+  end
+
 
 end

@@ -24,11 +24,11 @@ def main(args) do
 
 
     IO.puts " all is done"
-    node_id = "549"
-    IO.puts "file hash :: " <> getFileHash("keyur file")
-    fileHash = getFileHash("keyur file")
+    #node_id = "549"
+    IO.puts "file hash :: " <> getFileHash("nima file")
+    fileHash = getFileHash("nima file")
     startNode = Enum.random(list)
-    send_message(startNode,fileHash,0)
+    send_message(startNode,fileHash)
     #generate_routing_table(input_val,node_id,list) 
     IO.gets ""
 
@@ -333,88 +333,67 @@ end
 
 
 
-def send_message(neighbourId,fileHash,prefixLength) do
-      neighbour_node_name = neighbourId
-      spawn fn -> GenServer.call(String.to_atom(neighbour_node_name),{:receive_msg,{fileHash,prefixLength}}) end
-  end
+def string_compare(fileHash,curr_node,prefixLength) do
+    if String.at(fileHash,prefixLength) == String.at(curr_node,prefixLength) do
+        string_compare(fileHash,curr_node,prefixLength+1)
+    else
+        prefixLength
+    end
+end
+
+
+def send_message(neighbourId,fileHash) do
+      start_node_name = neighbourId
+      spawn fn -> GenServer.call(String.to_atom(start_node_name),{:receive_msg,{fileHash}}) end
+end
 
   ##server cal;backs
-  #new_messag8e => filehash,prefixlength 
+ 
+  def iter_neighbours(neighbor,fileHash,row) do
+      if length(neighbor)>0 do
+          [first|rest_list] = neighbor
+          if String.at(first,row) == String.at(fileHash,row) do
+              first
+          else
+              iter_neighbours(rest_list,fileHash,row)
+          end 
+      else
+          nearest_node = nil  
+          nearest_node  
+      end
+
+
+  end
+
   def handle_call({:receive_msg ,new_message}, _from,state) do
     
     fileHash = elem(new_message,0)
-    prefixLength = elem(new_message,1)
-    neighbour = findClosestNeighbor(fileHash,state,prefixLength)
-    IO.puts "*****"
-    IO.inspect neighbour
-    neighbourId = elem(neighbour,0)
-    IO.inspect neighbourId
-    if(elem(neighbour,1) == true) do
-     IO.puts "keyurrrrrr"
-      IO.puts neighbourId
+    curr_node = Map.get(state,"node_id")
+    row = string_compare(fileHash,curr_node,0)
+    neighbour = Map.get(state,row)
+    next_neighbour = iter_neighbours(neighbour,fileHash,row)
+    
+    if next_neighbour != nil do
+      IO.inspect next_neighbour
+      save_prev_neighbor = next_neighbour
+    end
+    
+
+    if next_neighbour == nil do
+        getNearestNodeId(save_prev_neighbor,fileHash)
     else
-      send_message(neighbourId,fileHash,prefixLength+1)
+        send_message(next_neighbour,fileHash)
     end
     {:reply, state, state}   
   end
 
-def findClosestNeighbor(fileHash, state, prefixLength) do 
 
-     startNode = "000"
-     
-     currPrefix= ""
-     filePrefix = ""
-
-     if prefixLength > 0 do 
-      currPrefix= String.slice(startNode, 0..prefixLength-1)
-      filePrefix = String.slice(fileHash, 0..prefixLength-1)
-     end   
-
-     neighbors = Map.get(state, prefixLength)
-     nextHop = ''
-     isLastHop = false
-     if !Enum.member?(neighbors, fileHash) do
-        increasedPrefix =  String.slice(fileHash, 0..prefixLength)
-        #IO.inspect startNode
-        # IO.inspect increasedPrefix
-        # IO.inspect String.slice(Enum.at(neighbors,0), 0..prefixLength)
-        # IO.puts "-------------"
-        nextHoplist = Enum.filter(neighbors, fn(neighbor) ->  String.slice(neighbor, 0..prefixLength) == increasedPrefix end)
-        IO.inspect nextHoplist
-       
-        if length(nextHoplist) != 0 do
-          nextHop = Enum.random(nextHoplist)
-          #IO.puts "nextHop"
-          #IO.inspect nextHop
-          #IO.puts "--------------------"
-        else
-          nextHop = getNearestNodeId(neighbors, fileHash, prefixLength, 18, fileHash)
-          isLastHop = true
-        end
-     end
-     IO.inspect nextHop
-     {nextHop, isLastHop}
-  end
+def getNearestNodeId(curr_node,fileHash) do
 
 
+end
 
 
-def getNearestNodeId(list, fileHash, position, min, sofar) do
-    if(length(list) == 0) do
-      sofar    
-    else
-      [firstElement | list] = list   
-      dist =  String.to_integer(String.slice(fileHash,position..position),16) - String.to_integer(String.slice(firstElement,position..position),16)
-      #find nearest matching character less than
-      ##IO.puts "filehash : " <> String.slice(fileHash,position..position) <> "  FE::" <> String.slice(firstElement,position..position)  
-      #IO.puts dist 
-      if(dist >=0 && dist<min) do
-        sofar = firstElement
-        min = dist
-      end
-      getNearestNodeId(list,fileHash,position,min,sofar)
-    end
-  end
 
 
 end

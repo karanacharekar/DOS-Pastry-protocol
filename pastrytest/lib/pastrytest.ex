@@ -19,22 +19,22 @@ def main(args) do
     numrequestss = Integer.parse(requests)
     numrequests = elem(numrequestss,0)
     
-    IO.inspect numrequests
-    IO.inspect input_val
+    #IO.inspect numrequests
+    #IO.inspect input_val
 
-    IO.puts "-------------------------------"
+    #IO.puts "-------------------------------"
 
     list = getNodeList(input_val)
     file_list = get_files(numrequests,[])
-    IO.puts "file list is this"
-    IO.inspect file_list
+    #IO.puts "file list is this"
+    #IO.inspect file_list
     create_nodes(list,list,input_val)
-    IO.puts " all is done"
+    #IO.puts " all is done"
     #IO.puts "file hash :: " <> getFileHash("aanima file")
     #fileHash = getFileHash("aanima file")
     #fileHash = "9E4C"
     hop_counter(list,file_list)
-    IO.puts " i am hereeeeeeeeeeeeeeeeeeeeeee" 
+    #IO.puts " i am hereeeeeeeeeeeeeeeeeeeeeee" 
     all_hops = getaveragehops(list,0)
     avgnumhops = all_hops/(length(list)*length(file_list))
     IO.puts "Avg number of hops are"
@@ -51,8 +51,8 @@ def main(args) do
       [curr_node|rest_list] = nodelist
       state =  GenServer.call(String.to_atom(curr_node),{:get_state, "getstate"}) 
       count = Map.get(state,"count")
-      IO.inspect count
-      IO.inspect Enum.sum(count)
+      #IO.inspect count
+      #IO.inspect Enum.sum(count)
       avghops = avghops + Enum.sum(count)
       getaveragehops(rest_list,avghops)
     else
@@ -66,9 +66,9 @@ def main(args) do
         curr_node = n 
         Enum.each(file_list, fn(f) ->
             curr_file = f
-            IO.puts "-------------"
-            IO.inspect curr_node
-            IO.inspect curr_file
+            #IO.puts "-------------"
+            #IO.inspect curr_node
+            #IO.inspect curr_file
             send_message(curr_node,curr_node,curr_file,0)
         end)
      end)
@@ -101,10 +101,10 @@ def main(args) do
     state = generate_routing_table(numnodes,nodeid,nodelist)
     state = Map.put(state,"node_id",nodeid)
     state = Map.put(state,"count",[])
-    IO.puts "-------------------------"
-    IO.inspect nodeid
-    IO.inspect state
-    IO.puts "-------------------------"
+    #IO.puts "-------------------------"
+    #IO.inspect nodeid
+    #IO.inspect state
+    #IO.puts "-------------------------"
     {:ok,state}
   end
 
@@ -123,7 +123,7 @@ def main(args) do
   def generateList(n,interval,curid,nodeList) do
     cur = Integer.to_string(curid,16)
     cur = convertTo32bits(cur)
-    IO.puts cur
+    #IO.puts cur
     nodeList = [cur | nodeList]
     if( n > 1 ) do
       interval = round(:math.floor((getNodeSpace - curid - 1)/(n-1)))
@@ -375,15 +375,15 @@ def iter_neighbours(neighbor,full_list,fileHash,row,curr) do
       hopcount = hopcount+1
       {next_neighbour,condi} = iter_neighbours(neighbour,neighbour,fileHash,row,curr_node)
     else
-        IO.puts "nearest neigbour is "
-        IO.inspect curr_node
+        #IO.puts "nearest neigbour is "
+        #IO.inspect curr_node
         spawn fn -> GenServer.call(String.to_atom(source_node),{:update_count_list,{hopcount}}) end
 
     end
   
     if condi == "end" do
-        IO.puts "nearest neighbour is" 
-        IO.puts next_neighbour
+        #IO.puts "nearest neighbour is" 
+        #IO.puts next_neighbour
         spawn fn -> GenServer.call(String.to_atom(source_node),{:update_count_list,{hopcount}}) end
     end
 

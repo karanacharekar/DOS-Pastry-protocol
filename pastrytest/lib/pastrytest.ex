@@ -3,9 +3,6 @@ defmodule Pastrytest do
 def main(args) do
 
     input_val = parse_args(args)
-
-
-
     list = getNodeList(input_val)
     node_id = "000"
     #IO.inspect list
@@ -237,6 +234,85 @@ def main(args) do
     fin_route_table = iter(route_table,rows-1,nodelist,nodeid)  
     IO.puts "here"
     IO.inspect fin_route_table
+
+
+    #leaf_map = %{}
+    distance_list = create_leaf_set(nodeid,nodelist,[])
+    distance_list_sorted = Enum.sort(distance_list)
+    num_leafs = round(:math.pow(2,4)/2)
+    zero_index = Enum.find_index(distance_list, fn(x) -> x==0 end)
+    count_larger_set = zero_index + num_leafs
+    count_smaller_set = zero_index - num_leafs
+    larger_list = generate_larger_leafset(nodeid,zero_index,distance_list_sorted,count_larger_set,[])
+    smaller_list = generate_smaller_leafset(nodeid,zero_index,distance_list_sorted,count_smaller_set,[])
+    all_leaves = smaller_list ++ larger_list
+    IO.inspect all_leaves
+    fin_route_table = Map.put(fin_route_table,"leaf_set",all_leaves)
+    IO.inspect fin_route_table
   end
+
+
+  
+  def generate_larger_leafset(nodeid,zero_index,distance_list_sorted,count_larger_set,larger_list) do
+  
+    IO.inspect distance_list_sorted
+    if  count_larger_set > zero_index do
+      
+      val = Enum.at(distance_list_sorted,count_larger_set)
+      if val != nil do
+        IO.puts "val is"
+        IO.inspect val
+        nodeid_val = String.to_integer(nodeid,16)
+        IO.puts "node id val is "
+        IO.inspect nodeid_val
+        curr_node_val = nodeid_val - val
+        curr_node = Integer.to_string(curr_node_val,16)
+        larger_list = larger_list ++ [curr_node]
+        generate_larger_leafset(nodeid,zero_index,distance_list_sorted,count_larger_set-1,larger_list)
+      else
+        generate_larger_leafset(nodeid,zero_index,distance_list_sorted,count_larger_set-1,larger_list)
+      end
+    else
+      larger_list
+    end     
+
+
+  end 
+
+
+  def generate_smaller_leafset(nodeid,zero_index,distance_list_sorted, count_smaller_set,smaller_list) do
+  if  count_smaller_set < zero_index do
+      val = Enum.at(distance_list_sorted,count_smaller_set)
+      if val !=nil do
+        nodeid_val = String.to_integer(nodeid,16)
+        curr_node_val = nodeid_val - val
+        curr_node = Integer.to_string(curr_node_val,16)
+        smaller_list = smaller_list ++ [curr_node]
+        generate_smaller_leafset(nodeid,zero_index,distance_list_sorted,count_smaller_set+1,smaller_list)
+      else  
+        generate_smaller_leafset(nodeid,zero_index,distance_list_sorted,count_smaller_set+1,smaller_list)
+      end
+    else
+      smaller_list
+    end   
+
+  end 
+
+
+
+def create_leaf_set(nodeid,nodelist,distance_list) do
+    if length(nodelist) != 0 do
+        [curr_node| rest_list] = nodelist
+        intval_curr = String.to_integer(curr_node,16)
+        intval_nodeid =  String.to_integer(nodeid,16)
+        diff =  intval_nodeid - intval_curr
+        distance_list = distance_list ++ [diff]
+        create_leaf_set(nodeid,rest_list,distance_list)  
+
+    else
+        distance_list
+    end
+
+end
 
 end

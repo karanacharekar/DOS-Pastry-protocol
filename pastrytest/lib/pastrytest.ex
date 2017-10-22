@@ -17,22 +17,14 @@ def main(args) do
     IO.puts "-------------------------------"
     IO.inspect input_val
     list = getNodeList(input_val)
-    #node_id = "000"
-    #IO.puts "file hash :: " <> getFileHash("keyur file")
-    #generate_routing_table(input_val,node_id,list) 
     create_nodes(list,list,input_val)
-
-
     IO.puts " all is done"
-    #node_id = "549"
-    IO.puts "file hash :: " <> getFileHash("nima file")
-    fileHash = getFileHash("nima file")
+    IO.puts "file hash :: " <> getFileHash("aanima file")
+    fileHash = getFileHash("aanima file")
+    #fileHash = "EED"
     startNode = Enum.random(list)
     send_message(startNode,fileHash)
-    #generate_routing_table(input_val,node_id,list) 
     IO.gets ""
-
-
   end
 
   def create_nodes(nodelist,nodelistfull,numnodes) do
@@ -62,76 +54,43 @@ def main(args) do
   end
 
 
-
   def getNodeList(n) do
     interval =  round(:math.floor(getNodeSpace/n))
     generateList(n,interval,0,[])
   end
 
 
-
   def generateList(n,interval,curid,nodeList) do
-
-    #ewe
-
     cur = Integer.to_string(curid,16)
-
-    #IO.puts cur
-
     cur = convertTo32bits(cur)
-
     IO.puts cur
-
-
-
     nodeList = [cur | nodeList]
-
-    
-
     if( n > 1 ) do
-
       interval = round(:math.floor((getNodeSpace - curid - 1)/(n-1)))
-
       nodeList = generateList(n-1,interval,curid+interval,nodeList)
-
     end
-
-      
-
     nodeList 
-
   end
 
 
 
   def convertTo32bits(str) do
-
      getZeroes(getBitCount/4 - String.length(str),"") <> str
-
-     
-
   end
 
 
 
   def getNodeSpace do
-
     :math.pow(2,getBitCount)
-
   end
 
   
 
   def getZeroes(n,str) do
-
      if(n>0) do
-
        str = getZeroes(n-1,str <> "0")
-
      end
-
      str
-
   end
 
 
@@ -142,53 +101,36 @@ def main(args) do
 
 
   def iter(route_table,rows,nodelist,nodeid)   do 
-    #IO.inspect rows
     if(rows < 0) do 
       route_table
     else
     route_table = Map.put(route_table,rows,[])
     choice = ["A","B","C","D","E","F","0","1","2","3","4","5","6","7","8","9"]
-    #IO.inspect route_table  
         if rows != 0 do
-        route_table_new = generator123(nodeid,nodelist,route_table,rows,choice)  
-        route_table_new=iter(route_table_new,rows-1,Enum.shuffle(nodelist),nodeid) 
-        route_table_new
-
+          route_table_new = generator123(nodeid,nodelist,route_table,rows,choice)  
+          route_table_new=iter(route_table_new,rows-1,Enum.shuffle(nodelist),nodeid) 
+          route_table_new
         else
-        #IO.inspect rows
-        #IO.inspect route_table
-        #IO.puts "karannnnnnn"
-
-
-        route_table_new = generator0(nodeid,nodelist,route_table,rows,choice)  
-        route_table_new=iter(route_table_new,rows-1,Enum.shuffle(nodelist),nodeid) 
-        route_table_new
+          route_table_new = generator0(nodeid,nodelist,route_table,rows,choice)  
+          route_table_new=iter(route_table_new,rows-1,Enum.shuffle(nodelist),nodeid) 
+          route_table_new
+        end
     end
-  end
   end
 
 
 
   
   def generator0(nodeid,nodelist,route_table,rows,choice) do
-    #IO.inspect route_table
     if length(nodelist) !=0 do
     [x|nodelistrest] = nodelist
-    #IO.puts "----"
-    #IO.inspect String.at(x,rows)
     choice = List.delete(choice,String.at(nodeid,rows))
-    #IO.inspect choice
     if String.first(x) != String.first(nodeid) do
-      #IO.inspect choice
       char = String.first(x)
-      #IO.puts char
-      #IO.inspect choice
       if Enum.member?(choice,char) do
-        #Io.puts "thissss"
         list = Map.get(route_table,rows)
         list = list ++ [x]
         route_table = Map.put(route_table,rows,list)
-        #IO.inspect route_table
         choice = List.delete(choice,char)
       end  
     end
@@ -196,33 +138,21 @@ def main(args) do
     generator0(nodeid,nodelistrest,route_table,rows,choice) 
 
     else
-    #IO.puts "heloo"
-    #IO.inspect route_table
-
-    route_table
+      route_table
     end
     end
 
 
     def generator123(nodeid,nodelist,route_table,rows,choice) do
-    #IO.inspect route_table
     if length(nodelist) !=0 do
     [x|nodelistrest] = nodelist
-    #IO.puts "----"
-    #IO.inspect String.at(x,rows)
     choice = List.delete(choice,String.at(nodeid,rows))
-    #IO.inspect choice
     if String.slice(x,0..rows-1) == String.slice(nodeid,0..rows-1) do
-      #IO.inspect choice
       char = String.at(x,rows)
-      #IO.puts char
-      #IO.inspect choice
       if Enum.member?(choice,char) do
-        #Io.puts "thissss"
         list = Map.get(route_table,rows)
         list = list ++ [x]
         route_table = Map.put(route_table,rows,list)
-        #IO.inspect route_table
         choice = List.delete(choice,char)
       end  
     end
@@ -230,10 +160,7 @@ def main(args) do
     generator123(nodeid,nodelistrest,route_table,rows,choice) 
 
     else
-    #IO.puts "heloo"
-    #IO.inspect route_table
-
-    route_table
+      route_table
     end
     end
 
@@ -242,14 +169,9 @@ def main(args) do
   def generate_routing_table(numnodes,nodeid,nodelist) do
     rows = round(Float.ceil(:math.log(numnodes)/:math.log(16))) 
     route_table = %{}
-    #IO.puts "---------------"
-    #IO.puts rows
+
     fin_route_table = iter(route_table,rows-1,nodelist,nodeid)  
-    #IO.puts "here"
-    #IO.inspect fin_route_table
 
-
-    #leaf_map = %{}
     distance_list = create_leaf_set(nodeid,nodelist,[])
     distance_list_sorted = Enum.sort(distance_list)
     num_leafs = round(:math.pow(2,4)/2)
@@ -259,9 +181,8 @@ def main(args) do
     larger_list = generate_larger_leafset(nodeid,zero_index,distance_list_sorted,count_larger_set,[])
     smaller_list = generate_smaller_leafset(nodeid,zero_index,distance_list_sorted,count_smaller_set,[])
     all_leaves = smaller_list ++ larger_list
-    #IO.inspect all_leaves
+
     fin_route_table = Map.put(fin_route_table,"leaf_set",all_leaves)
-    #IO.inspect fin_route_table
 
     fin_route_table
   end
@@ -269,17 +190,12 @@ def main(args) do
 
   
   def generate_larger_leafset(nodeid,zero_index,distance_list_sorted,count_larger_set,larger_list) do
-  
-    #IO.inspect distance_list_sorted
+
     if  count_larger_set > zero_index do
       
       val = Enum.at(distance_list_sorted,count_larger_set)
       if val != nil do
-        #IO.puts "val is"
-        #IO.inspect val
         nodeid_val = String.to_integer(nodeid,16)
-        #IO.puts "node id val is "
-        #IO.inspect nodeid_val
         curr_node_val = nodeid_val - val
         curr_node = Integer.to_string(curr_node_val,16)
         larger_list = larger_list ++ [curr_node]
@@ -323,7 +239,6 @@ def create_leaf_set(nodeid,nodelist,distance_list) do
         diff =  intval_nodeid - intval_curr
         distance_list = distance_list ++ [diff]
         create_leaf_set(nodeid,rest_list,distance_list)  
-
     else
         distance_list
     end
@@ -349,20 +264,19 @@ end
 
   ##server cal;backs
  
-  def iter_neighbours(neighbor,fileHash,row) do
+  def iter_neighbours(neighbor,full_list,fileHash,row,curr) do
       if length(neighbor)>0 do
           [first|rest_list] = neighbor
           if String.at(first,row) == String.at(fileHash,row) do
               first
           else
-              iter_neighbours(rest_list,fileHash,row)
+              iter_neighbours(rest_list,full,list,fileHash,row,first)
           end 
       else
-          nearest_node = nil  
-          nearest_node  
+          new_list = full_list ++ [curr]
+          nearestnode = getNearestNodeId(new_list,fileHash)
+          nearestnode
       end
-
-
   end
 
   def handle_call({:receive_msg ,new_message}, _from,state) do
@@ -371,7 +285,7 @@ end
     curr_node = Map.get(state,"node_id")
     row = string_compare(fileHash,curr_node,0)
     neighbour = Map.get(state,row)
-    next_neighbour = iter_neighbours(neighbour,fileHash,row)
+    next_neighbour = iter_neighbours(neighbour,neighbour,fileHash,row)
     
     if next_neighbour != nil do
       IO.inspect next_neighbour
@@ -380,6 +294,7 @@ end
     
 
     if next_neighbour == nil do
+        IO.puts "finallyyyy"
         getNearestNodeId(save_prev_neighbor,fileHash)
     else
         send_message(next_neighbour,fileHash)

@@ -1,58 +1,67 @@
 defmodule Pastrytest do
  
 def main(args) do
-
-    input_val = parse_args(args)
-    list = getNodeList(input_val)
-    node_id = "000"
-    #IO.inspect list
-
-    IO.puts "file hash :: " <> getFileHash("keyur file")
-
-    #IO.inspect getZeroes(25,"")
-    generate_routing_table(input_val,node_id,list)
+    args |> parse_args 
+    
   end
 
   def getBitCount do
-
-    bitCount = 12
-
+    bitCount = 16
     bitCount 
-
   end
 
   def parse_args(args) do
-
     {_, [input], _} = OptionParser.parse(args)
-
-    #IO.inspect input
-
+    
     {input_val,_} = Integer.parse(input)
+    IO.puts "-------------------------------"
+    IO.inspect input_val
+    list = getNodeList(input_val)
+    #node_id = "000"
+    #IO.puts "file hash :: " <> getFileHash("keyur file")
+    #generate_routing_table(input_val,node_id,list) 
+    create_nodes(list,list,input_val)
 
-    #IO.inspect input_val
 
-    input_val
+    IO.puts " all is done"
+    node_id = "567"
+    IO.puts "file hash :: " <> getFileHash("keyur file")
+    #generate_routing_table(input_val,node_id,list) 
+
+
 
   end
 
-  
+  def create_nodes(nodelist,nodelistfull,numnodes) do
+    if length(nodelist) !=0 do
+      [curr_node|rest_list] = nodelist
+      GenServer.start_link(__MODULE__, {curr_node,numnodes,nodelistfull}, name: String.to_atom(curr_node))
+      create_nodes(rest_list,nodelistfull,numnodes)
+    end
+  end
+
+  def init(args) do
+    nodeid = elem(args,0)
+    numnodes = elem(args,1)
+    nodelist = elem(args,2)
+    state = generate_routing_table(numnodes,nodeid,nodelist)
+    IO.puts "-------------------------"
+    IO.inspect nodeid
+    IO.inspect state
+    IO.puts "-------------------------"
+    {:ok,state}
+  end
+
 
   def generateNodeId(n) do
-
     Integer.to_string(round(:math.pow(2,getBitCount)),2)
-
-    
-
   end
 
 
 
   def getNodeList(n) do
-
     interval =  round(:math.floor(getNodeSpace/n))
-
     generateList(n,interval,0,[])
-
   end
 
 
@@ -142,9 +151,9 @@ def main(args) do
         route_table_new
 
         else
-        IO.inspect rows
-        IO.inspect route_table
-        IO.puts "karannnnnnn"
+        #IO.inspect rows
+        #IO.inspect route_table
+        #IO.puts "karannnnnnn"
 
 
         route_table_new = generator0(nodeid,nodelist,route_table,rows,choice)  
@@ -183,8 +192,8 @@ def main(args) do
     generator0(nodeid,nodelistrest,route_table,rows,choice) 
 
     else
-    IO.puts "heloo"
-    IO.inspect route_table
+    #IO.puts "heloo"
+    #IO.inspect route_table
 
     route_table
     end
@@ -217,8 +226,8 @@ def main(args) do
     generator123(nodeid,nodelistrest,route_table,rows,choice) 
 
     else
-    IO.puts "heloo"
-    IO.inspect route_table
+    #IO.puts "heloo"
+    #IO.inspect route_table
 
     route_table
     end
@@ -229,11 +238,11 @@ def main(args) do
   def generate_routing_table(numnodes,nodeid,nodelist) do
     rows = round(Float.ceil(:math.log(numnodes)/:math.log(16))) 
     route_table = %{}
-    IO.puts "---------------"
-    IO.puts rows
+    #IO.puts "---------------"
+    #IO.puts rows
     fin_route_table = iter(route_table,rows-1,nodelist,nodeid)  
-    IO.puts "here"
-    IO.inspect fin_route_table
+    #IO.puts "here"
+    #IO.inspect fin_route_table
 
 
     #leaf_map = %{}
@@ -246,25 +255,27 @@ def main(args) do
     larger_list = generate_larger_leafset(nodeid,zero_index,distance_list_sorted,count_larger_set,[])
     smaller_list = generate_smaller_leafset(nodeid,zero_index,distance_list_sorted,count_smaller_set,[])
     all_leaves = smaller_list ++ larger_list
-    IO.inspect all_leaves
+    #IO.inspect all_leaves
     fin_route_table = Map.put(fin_route_table,"leaf_set",all_leaves)
-    IO.inspect fin_route_table
+    #IO.inspect fin_route_table
+
+    fin_route_table
   end
 
 
   
   def generate_larger_leafset(nodeid,zero_index,distance_list_sorted,count_larger_set,larger_list) do
   
-    IO.inspect distance_list_sorted
+    #IO.inspect distance_list_sorted
     if  count_larger_set > zero_index do
       
       val = Enum.at(distance_list_sorted,count_larger_set)
       if val != nil do
-        IO.puts "val is"
-        IO.inspect val
+        #IO.puts "val is"
+        #IO.inspect val
         nodeid_val = String.to_integer(nodeid,16)
-        IO.puts "node id val is "
-        IO.inspect nodeid_val
+        #IO.puts "node id val is "
+        #IO.inspect nodeid_val
         curr_node_val = nodeid_val - val
         curr_node = Integer.to_string(curr_node_val,16)
         larger_list = larger_list ++ [curr_node]

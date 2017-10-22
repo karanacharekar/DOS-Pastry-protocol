@@ -6,7 +6,7 @@ def main(args) do
   end
 
   def getBitCount do
-    bitCount = 12
+    bitCount = 16
     bitCount 
   end
 
@@ -20,8 +20,8 @@ def main(args) do
     create_nodes(list,list,input_val)
     IO.puts " all is done"
     IO.puts "file hash :: " <> getFileHash("aanima file")
-    fileHash = getFileHash("aanima file")
-    #fileHash = "EED"
+    #fileHash = getFileHash("aanima file")
+    fileHash = "9E4C"
     startNode = Enum.random(list)
     send_message(startNode,fileHash)
     IO.gets ""
@@ -265,17 +265,34 @@ end
   ##server cal;backs
  
   def iter_neighbours(neighbor,full_list,fileHash,row,curr) do
+      
       if length(neighbor)>0 do
           [first|rest_list] = neighbor
+          IO.puts "firstis"
+          IO.inspect first
+          IO.puts "file is "
+          IO.inspect fileHash
           if String.at(first,row) == String.at(fileHash,row) do
-              first
+              {first,"notend"}
           else
-              iter_neighbours(rest_list,full,list,fileHash,row,first)
+              IO.inspect rest_list
+              iter_neighbours(rest_list,full_list,fileHash,row,curr)
           end 
       else
           new_list = full_list ++ [curr]
-          nearestnode = getNearestNodeId(new_list,fileHash)
-          nearestnode
+          IO.puts "== === =="
+          IO.inspect new_list
+          dist = %{}
+          nearestnodemap = getNearestNodeId(new_list,fileHash,dist)
+          IO.inspect nearestnodemap
+          keys = Map.keys(nearestnodemap)
+          keys = Enum.sort(keys)
+          IO.inspect keys
+          nearestnodeid = List.first(keys)
+          IO.inspect nearestnodeid
+          nearestnode = Map.get(nearestnodemap,nearestnodeid)
+          IO.inspect nearestnode
+          {nearestnode,"end"}
       end
   end
 
@@ -283,29 +300,49 @@ end
     
     fileHash = elem(new_message,0)
     curr_node = Map.get(state,"node_id")
+    IO.puts "curr node is"
+    IO.inspect curr_node
     row = string_compare(fileHash,curr_node,0)
+    IO.puts "rows is "
+    IO.inspect row
+    IO.puts "filehash is"
+    IO.inspect fileHash
     neighbour = Map.get(state,row)
-    next_neighbour = iter_neighbours(neighbour,neighbour,fileHash,row)
+    IO.puts "neighbr is"
+    IO.inspect neighbour
     
-    if next_neighbour != nil do
-      IO.inspect next_neighbour
-      save_prev_neighbor = next_neighbour
+    if neighbour != nil do
+      {next_neighbour,condi} = iter_neighbours(neighbour,neighbour,fileHash,row,curr_node)
+    else
+        IO.puts "nearest neigbour is "
+        IO.inspect curr_node
     end
     
+    
 
-    if next_neighbour == nil do
-        IO.puts "finallyyyy"
-        getNearestNodeId(save_prev_neighbor,fileHash)
-    else
+    if condi == "end" do
+        IO.puts "nearest neighbour is" 
+        IO.puts next_neighbour
+    end
+
+    if condi == "notend" do
         send_message(next_neighbour,fileHash)
     end
     {:reply, state, state}   
   end
 
 
-def getNearestNodeId(curr_node,fileHash) do
-
-
+def getNearestNodeId(neighbour,fileHash,dist) do
+  
+    if length(neighbour) > 0 do
+        [head|rest_list] = neighbour
+        head_val = String.to_integer(head,16)
+        fileHash_val = String.to_integer(fileHash,16)
+        dist = Map.put(dist,Kernel.abs(head_val-fileHash_val),head)
+        getNearestNodeId(rest_list,fileHash,dist)
+    else
+      dist
+    end  
 end
 
 

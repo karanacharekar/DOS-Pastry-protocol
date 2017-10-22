@@ -6,25 +6,84 @@ def main(args) do
   end
 
   def getBitCount do
-    bitCount = 16
+    bitCount = 128
     bitCount 
   end
 
   def parse_args(args) do
-    {_, [input], _} = OptionParser.parse(args)
+    {_, [input,requests], _} = OptionParser.parse(args)
     
-    {input_val,_} = Integer.parse(input)
-    IO.puts "-------------------------------"
+
+    input_valss = Integer.parse(input)
+    input_val = elem(input_valss,0)
+    numrequestss = Integer.parse(requests)
+    numrequests = elem(numrequestss,0)
+    
+    IO.inspect numrequests
     IO.inspect input_val
+
+    IO.puts "-------------------------------"
+
     list = getNodeList(input_val)
+    file_list = get_files(numrequests,[])
+    IO.puts "file list is this"
+    IO.inspect file_list
     create_nodes(list,list,input_val)
     IO.puts " all is done"
-    IO.puts "file hash :: " <> getFileHash("aanima file")
+    #IO.puts "file hash :: " <> getFileHash("aanima file")
     #fileHash = getFileHash("aanima file")
-    fileHash = "9E4C"
-    startNode = Enum.random(list)
-    send_message(startNode,fileHash)
+    #fileHash = "9E4C"
+    hop_counter(list,file_list)
+    IO.puts " i am hereeeeeeeeeeeeeeeeeeeeeee" 
+    all_hops = getaveragehops(list,0)
+    avgnumhops = all_hops/(length(list)*length(file_list))
+    IO.puts "Avg number of hops are"
+    IO.inspect avgnumhops
+    #startNode = Enum.random(list)
+    #send_message(startNode,fileHash)
     IO.gets ""
+  end
+
+
+ 
+  def getaveragehops(nodelist,avghops) do
+    if length(nodelist) != 0 do
+      [curr_node|rest_list] = nodelist
+      state =  GenServer.call(String.to_atom(curr_node),{:get_state, "getstate"}) 
+      count = Map.get(state,"count")
+      IO.inspect count
+      IO.inspect Enum.sum(count)
+      avghops = avghops + Enum.sum(count)
+      getaveragehops(rest_list,avghops)
+    else
+      avghops  
+    end
+
+  end 
+
+  def hop_counter(nodelist,file_list) do
+     Enum.each(nodelist, fn(n) ->
+        curr_node = n 
+        Enum.each(file_list, fn(f) ->
+            curr_file = f
+            IO.puts "-------------"
+            IO.inspect curr_node
+            IO.inspect curr_file
+            send_message(curr_node,curr_node,curr_file,0)
+        end)
+     end)
+  end
+
+
+  def get_files(num,list) do
+    if num > 0 do
+        string = :crypto.strong_rand_bytes(30) |> Base.url_encode64
+        fileHash = getFileHash(string)
+        list = list ++ [fileHash]
+        get_files(num-1,list) 
+    else
+        list
+    end
   end
 
   def create_nodes(nodelist,nodelistfull,numnodes) do
@@ -41,6 +100,7 @@ def main(args) do
     nodelist = elem(args,2)
     state = generate_routing_table(numnodes,nodeid,nodelist)
     state = Map.put(state,"node_id",nodeid)
+    state = Map.put(state,"count",[])
     IO.puts "-------------------------"
     IO.inspect nodeid
     IO.inspect state
@@ -247,7 +307,6 @@ end
 
 
 
-
 def string_compare(fileHash,curr_node,prefixLength) do
     if String.at(fileHash,prefixLength) == String.at(curr_node,prefixLength) do
         string_compare(fileHash,curr_node,prefixLength+1)
@@ -257,83 +316,85 @@ def string_compare(fileHash,curr_node,prefixLength) do
 end
 
 
-def send_message(neighbourId,fileHash) do
+def send_message(source_node,neighbourId,fileHash,hopcount) do
       start_node_name = neighbourId
-      spawn fn -> GenServer.call(String.to_atom(start_node_name),{:receive_msg,{fileHash}}) end
+      spawn fn -> GenServer.call(String.to_atom(start_node_name),{:receive_msg,{source_node,fileHash,hopcount}}) end
 end
 
   ##server cal;backs
  
-  def iter_neighbours(neighbor,full_list,fileHash,row,curr) do
-      
+def iter_neighbours(neighbor,full_list,fileHash,row,curr) do
       if length(neighbor)>0 do
           [first|rest_list] = neighbor
-          IO.puts "firstis"
-          IO.inspect first
-          IO.puts "file is "
-          IO.inspect fileHash
+          #IO.puts "firstis"
+          #IO.inspect first
+          #IO.puts "file is "
+          #IO.inspect fileHash
           if String.at(first,row) == String.at(fileHash,row) do
               {first,"notend"}
           else
-              IO.inspect rest_list
+              #IO.inspect rest_list
               iter_neighbours(rest_list,full_list,fileHash,row,curr)
           end 
       else
           new_list = full_list ++ [curr]
-          IO.puts "== === =="
-          IO.inspect new_list
+          #IO.puts "== === =="
+          #IO.inspect new_list
           dist = %{}
           nearestnodemap = getNearestNodeId(new_list,fileHash,dist)
-          IO.inspect nearestnodemap
+          #IO.inspect nearestnodemap
           keys = Map.keys(nearestnodemap)
           keys = Enum.sort(keys)
-          IO.inspect keys
+          #IO.inspect keys
           nearestnodeid = List.first(keys)
-          IO.inspect nearestnodeid
+          #IO.inspect nearestnodeid
           nearestnode = Map.get(nearestnodemap,nearestnodeid)
-          IO.inspect nearestnode
+          #IO.inspect nearestnode
           {nearestnode,"end"}
       end
   end
 
   def handle_call({:receive_msg ,new_message}, _from,state) do
     
-    fileHash = elem(new_message,0)
+    source_node = elem(new_message,0)
+    fileHash = elem(new_message,1)
+    hopcount = elem(new_message,2)
     curr_node = Map.get(state,"node_id")
-    IO.puts "curr node is"
-    IO.inspect curr_node
+    #IO.puts "curr node is"
+    #IO.inspect curr_node
     row = string_compare(fileHash,curr_node,0)
-    IO.puts "rows is "
-    IO.inspect row
-    IO.puts "filehash is"
-    IO.inspect fileHash
+    #IO.puts "rows is "
+    #IO.inspect row
+    #IO.puts "filehash is"
+    #IO.inspect fileHash
     neighbour = Map.get(state,row)
-    IO.puts "neighbr is"
-    IO.inspect neighbour
+    #IO.puts "neighbr is"
+    #IO.inspect neighbour
     
     if neighbour != nil do
+      hopcount = hopcount+1
       {next_neighbour,condi} = iter_neighbours(neighbour,neighbour,fileHash,row,curr_node)
     else
         IO.puts "nearest neigbour is "
         IO.inspect curr_node
-    end
-    
-    
+        spawn fn -> GenServer.call(String.to_atom(source_node),{:update_count_list,{hopcount}}) end
 
+    end
+  
     if condi == "end" do
         IO.puts "nearest neighbour is" 
         IO.puts next_neighbour
+        spawn fn -> GenServer.call(String.to_atom(source_node),{:update_count_list,{hopcount}}) end
     end
 
     if condi == "notend" do
-        send_message(next_neighbour,fileHash)
+        send_message(source_node,next_neighbour,fileHash,hopcount)
     end
     {:reply, state, state}   
   end
 
 
 def getNearestNodeId(neighbour,fileHash,dist) do
-  
     if length(neighbour) > 0 do
         [head|rest_list] = neighbour
         head_val = String.to_integer(head,16)
@@ -345,6 +406,19 @@ def getNearestNodeId(neighbour,fileHash,dist) do
     end  
 end
 
+
+def handle_call({:get_state ,new_message},_from,state) do  
+    {:reply,state,state}
+end
+
+def handle_call({:update_count_list ,new_message},_from,state) do  
+     count = elem(new_message,0)
+     #state = GenServer.call(String.to_atom(curr_node),{:get_state, "getstate"})   
+     countlist = Map.get(state,"count")
+     countlist = countlist ++ [count]  
+     state = Map.put(state,"count",countlist)  
+     {:reply,state,state}
+end
 
 
 

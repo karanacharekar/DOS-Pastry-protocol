@@ -20,9 +20,12 @@ defmodule Pastrytestbonus do
     list = getNodeList(input_val)
     file_list = get_files(numrequests,[])
     create_nodes(list,list,input_val)
-    nodelist = failuremodel(list,list,fail_nodes)
+    {nodelist,killednodelist} = failuremodel([],list,fail_nodes)
     IO.puts "hereee"
     IO.inspect length(nodelist)
+    Enum.each(killednodelist, fn(x)->
+        adjustroutingtable(nodelist,nodelist,x)
+    end)    
     hop_counter(nodelist,file_list)
     {all_hops,length} = getaveragehops(nodelist,0,0)
     avgnumhops = all_hops/length
@@ -32,11 +35,12 @@ defmodule Pastrytestbonus do
   end
 
 
-  def failuremodel(fullnodelist,nodelist,fail) do 
+  def failuremodel(killednodelist,nodelist,fail) do 
       #IO.puts "hereeeeeeeeee"
       if fail > 0 do 
          kill_node = Enum.random(nodelist)
          nodelist = List.delete(nodelist,kill_node)
+         killednodelist = killednodelist ++ [kill_node]
          pid = Process.whereis(String.to_atom(kill_node))
          IO.inspect kill_node
          IO.inspect pid
@@ -44,10 +48,10 @@ defmodule Pastrytestbonus do
          GenServer.stop(pid,:normal)
          IO.inspect Process.alive?(pid)
          #adjustleafset(fullnodelist)
-         adjustroutingtable(nodelist,fullnodelist,kill_node)
-         failuremodel(fullnodelist,nodelist,fail-1) 
+         #adjustroutingtable(nodelist,fullnodelist,kill_node)
+         failuremodel(killednodelist,nodelist,fail-1) 
       else
-        nodelist
+        {nodelist,killednodelist}
       end
   end
 
@@ -72,13 +76,13 @@ defmodule Pastrytestbonus do
 
     for x <- 0..numrows-1 do
       row = Map.get(state,x)
-        #IO.puts "row is"
+        #IO.puts "row is" 
         #IO.inspect row
         #IO.puts "kill node is"
         #IO.inspect kill_node
         row = List.delete(row,kill_node)
         state = Map.put(state,x,row)
-
+        IO.inspect state
 
     end    
     {:reply,state,state}
@@ -424,4 +428,5 @@ def handle_call({:update_count_list ,new_message},_from,state) do
      state = Map.put(state,"count",countlist)  
      {:reply,state,state}
 end
+
 end
